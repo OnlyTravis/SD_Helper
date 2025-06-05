@@ -1,0 +1,1 @@
+const WIDESCREEN_RATIO = 1;
