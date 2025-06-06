@@ -1,4 +1,4 @@
-import 'package:client/pages/home_page/home_page.dart';
+import 'package:client/pages/login_page/login_page.dart';
 import 'package:flutter/material.dart';
 
 class SDHelperApp extends StatelessWidget {
@@ -11,11 +11,11 @@ class SDHelperApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Color.fromARGB(255, 160, 252, 255),
+          seedColor: const Color.fromARGB(255, 160, 252, 255),
           brightness: Brightness.light
         ),
       ),
-      home: HomePage(),
+      home: const LoginPage(),
     );
   }
 }
