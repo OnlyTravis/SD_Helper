@@ -1,5 +1,8 @@
 import 'package:client/page_templates/main_navigation/main_navigation.dart';
+import 'package:client/widgets/custom_text.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -9,11 +12,25 @@ class HomePage extends StatefulWidget {
 }
 class _HomePageState extends State<HomePage> {
   @override
-  Widget build(BuildContext context) {
+  void initState() {
+    final url = dotenv.get("SERVER_URL");
+    http.get(
+      Uri.parse("$url/api/getFolder?folder=/"),
+    );
+    super.initState();
+  }
 
-    return MainNavigationWrap(
-      child: Center(
-        child: Text("Home Page"),
+  @override
+  Widget build(BuildContext context) {
+    return const MainNavigationWrap(
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SimpleText(text: "Welcome Back", scale: 2, weight: FontWeight.bold)
+          ],
+        ),
       ),
     );
   }

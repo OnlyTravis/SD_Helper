@@ -1,22 +1,19 @@
-import expressSession from 'express-session';
-import express from 'express';
 import dotenv from 'dotenv';
-import cors from 'cors';
-import { applyRouters } from './routes/index';
+import { startApp } from './app.js';
+import { SettingsManager } from './code/settings/settings_manager.js';
+import { FolderManager } from './code/folders/folder_manager.js';
 
-dotenv.config();
-const PORT = process.env.PORT;
-const IS_DEV = process.env.IS_DEV;
-const SECRET = process.env.SECRET ?? "";
+declare module "express-session" {
+    interface SessionData {
+        logged_in: boolean,
+    }
+}
 
-const app = express();
-if (IS_DEV) app.use(cors());
-app.use(express.json());
-app.use(expressSession({
-    secret: SECRET,
-}));
-applyRouters(app);
+function main() {
+    dotenv.config()
+    SettingsManager.init();
+    FolderManager.init();
+    startApp();
+}
 
-app.listen(PORT, () => {
-    console.log(`SD Helper Server Opened on Port : ${PORT}`);
-});
+main();

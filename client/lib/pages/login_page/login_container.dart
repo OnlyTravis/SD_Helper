@@ -1,4 +1,6 @@
+import 'package:client/pages/home_page/home_page.dart';
 import 'package:client/pages/login_page/login_input.dart';
+import 'package:client/widgets/card_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
@@ -38,6 +40,7 @@ class _LoginContainerState extends State<LoginContainer> {
     }
     if (password.isEmpty) {
       setErrorText("Please enter a valid Password!");
+      return;
     }
 
     // 2. Send & Check response
@@ -46,8 +49,8 @@ class _LoginContainerState extends State<LoginContainer> {
       final res = await http.post(
         Uri.parse("$url/login"),
         body: {
-          username: username,
-          password: password
+          "username": username,
+          "password": password
         },
       );
       if (res.statusCode != 200) {
@@ -60,7 +63,12 @@ class _LoginContainerState extends State<LoginContainer> {
     }
 
     // 3. Redirect to home page
-    // ...
+    if (!mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const HomePage(),
+      )
+    );
   }
 
   @override
@@ -94,12 +102,10 @@ class _LoginContainerState extends State<LoginContainer> {
             color: Colors.red
           ),
         ),
-        TextButton(
+        CardButton(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
           onPressed: onLogin,
-          child: const Text(
-            "Login",
-            textScaler: TextScaler.linear(1.5),
-          ),
+          child: const Text("Login"),
         ),
       ],
     );

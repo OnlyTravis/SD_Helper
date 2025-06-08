@@ -1,8 +1,8 @@
 import { Router } from "express"
 
-const router = Router();
+const loginRouter = Router();
 
-router.post("/login", (req, res) => {
+loginRouter.post("/login", (req, res) => {
     // 1. Check if req is valid
     if (!req.body || !req.body.username || !req.body.password) {
         res.status(400).send("Invalid request");
@@ -19,7 +19,9 @@ router.post("/login", (req, res) => {
 
     // 3. Set cookies & response
     req.session.logged_in = true;
+    console.log("setting session");
+    console.log(req.session);
     res.status(200).send();
 });
 
-export default router;
+export default loginRouter;
