@@ -39,12 +39,14 @@ class LoginInputField extends StatefulWidget {
   final TextEditingController controller;
   final String hintText;
   final Widget prefixIcon;
+  final bool obfuscated;
 
   const LoginInputField({
     super.key,
     required this.controller,
     required this.hintText,
     required this.prefixIcon,
+    this.obfuscated = false,
   });
 
   @override
@@ -69,7 +71,7 @@ class _LoginInputFieldState extends State<LoginInputField> with SingleTickerProv
       animation: _animation,
       child: TextField(
         controller: widget.controller,
-        obscureText: true,
+        obscureText: widget.obfuscated,
         decoration: InputDecoration(
           border: const OutlineInputBorder(),
           prefixIcon: widget.prefixIcon,

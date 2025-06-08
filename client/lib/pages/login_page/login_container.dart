@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:client/code/fetch.dart';
 import 'package:client/pages/home_page/home_page.dart';
 import 'package:client/pages/login_page/login_input.dart';
 import 'package:client/widgets/card_button.dart';
@@ -53,10 +56,12 @@ class _LoginContainerState extends State<LoginContainer> {
           "password": password
         },
       );
-      if (res.statusCode != 200) {
+      final body = jsonDecode(res.body);
+      if (!body["success"]) {
         setErrorText("Incorrect Username or Password!");
         return;
       }
+      setToken(body["token"]);
     } catch (err) {
       setErrorText("An Error occured while logging in!");
       return;
@@ -94,6 +99,7 @@ class _LoginContainerState extends State<LoginContainer> {
             controller: _passwordController,
             hintText: "Password",
             prefixIcon: const Icon(Icons.lock),
+            obfuscated: true,
         ),
         if (errorText.isNotEmpty) Text(
           errorText,

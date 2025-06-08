@@ -1,4 +1,3 @@
-import session from 'express-session';
 import express from 'express';
 import cors from 'cors';
 
@@ -12,14 +11,11 @@ export function startApp() {
 
     const app = express();
 
-    if (IS_DEV) app.use(cors());
-    app.use(express.json());
-    app.use(express.urlencoded())
-    app.use(session({
-        secret: SECRET,
-        resave: true,
-        saveUninitialized: true,
+    if (IS_DEV) app.use(cors({
+        credentials: true
     }));
+    app.use(express.json());
+    app.use(express.urlencoded());
     applyRouters(app);
 
     app.listen(PORT, () => {

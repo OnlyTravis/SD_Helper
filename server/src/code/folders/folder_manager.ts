@@ -16,7 +16,7 @@ interface FolderObject {
     parent: string,
     folder_name: string,
     folder_path: string,
-    files: Array<FileObject>,
+    objects: Array<FolderObject | FileObject>,
 }
 
 export abstract class FolderManager {
@@ -32,11 +32,22 @@ export abstract class FolderManager {
         this._root_folder_paths = settings.root_folder_list;
 
         // 2. Travel into folders recursively
-        this._folder_list = [];
+        this._folder_list = [{
+            parent: "",
+            folder_name: "/",
+            folder_path: "/",
+            objects: [],
+        }];
         for (const folder_path of this._root_folder_paths) {
             if (!fs.existsSync(folder_path)) this._throwError(`Root Folder '${folder_path}' does not exist!`);
             
             const folder_name = folder_path.split("/").at(-1) ?? "";
+            this._folder_list[0].objects.push({
+                parent: "/",
+                folder_name: folder_name,
+                folder_path: `$${folder_name}$`,
+                objects: [],
+            });
             this._root_folder_map.set(folder_name, folder_path);
 
             const folders = this._traverseFolder("/", `$${folder_name}$`, true);
@@ -86,7 +97,7 @@ export abstract class FolderManager {
             parent: parent,
             folder_name: folder_path.split("/").at(-1) ?? "Error",
             folder_path: folder_path,
-            files: [],
+            objects: [],
         };
         const folders = [folder];
 
@@ -95,17 +106,21 @@ export abstract class FolderManager {
             const actual_obj_path = `${actual_folder_path}/${obj}`;
 
             const is_dir = fs.lstatSync(actual_obj_path).isDirectory();
-            if (is_dir && recursive) folders.push(...this._traverseFolder(folder_path, obj_path, true));
-            if (is_dir && !recursive) {
-                folders.push({
+            if (is_dir) {
+                const folder_obj: FolderObject = {
                     parent: folder_path,
                     folder_name: obj,
                     folder_path: obj_path,
-                    files: [],
-                });
-            }
-            if (!is_dir) {
-                folder.files.push({
+                    objects: [],
+                }
+                folder.objects.push(folder_obj);
+                if (recursive) {
+                    folders.push(...this._traverseFolder(folder_path, obj_path, true));
+                } else {
+                    folders.push(folder_obj)
+                }
+            } else {
+                folder.objects.push({
                     file_name: obj,
                     file_type: this._getFileType(obj),
                 });

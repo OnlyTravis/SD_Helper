@@ -1,4 +1,4 @@
-import 'package:client/data/global.dart';
+import 'package:client/code/global.dart';
 import 'package:flutter/material.dart';
 
 bool isWideScreen(BuildContext context) {
