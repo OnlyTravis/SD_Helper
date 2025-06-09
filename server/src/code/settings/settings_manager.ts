@@ -2,11 +2,11 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
-import { SETTINGS_PATH } from '../constants/constants.js';
+import { DEFAULT_SETTINGS_PATH, SETTINGS_PATH } from '../constants/constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const default_settings = readJson("./default_settings.json", true);
+const default_settings = readJson(DEFAULT_SETTINGS_PATH);
 
 interface ISettings {
     root_folder_list: Array<string>;
