@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import { Router } from "express";
 import jwt from "jsonwebtoken";
 
@@ -27,7 +28,8 @@ loginRouter.post("/login", (req, res) => {
     // 3. Get token & response
     const secret = process.env.SECRET ?? "";
     const token = jwt.sign({
-        username: username
+        username: username,
+        salt: randomUUID(),
     }, secret);
 
     res.status(200).json({

@@ -1,9 +1,9 @@
 import 'dart:convert';
 
 import 'package:client/code/fetch.dart';
-import 'package:client/pages/home_page/home_page.dart';
 import 'package:client/pages/login_page/login_input.dart';
 import 'package:client/widgets/card_button.dart';
+import 'package:client/page_templates/main_navigation/main_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
@@ -71,7 +71,7 @@ class _LoginContainerState extends State<LoginContainer> {
     if (!mounted) return;
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => const HomePage(),
+        builder: (_) => const MainNavigation(),
       )
     );
   }

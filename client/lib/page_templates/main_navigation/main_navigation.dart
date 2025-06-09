@@ -1,34 +1,48 @@
 import 'package:client/page_templates/main_navigation/main_navigation_header.dart';
 import 'package:client/page_templates/main_navigation/main_navigation_listview.dart';
+import 'package:client/page_templates/main_navigation/to_page.dart';
 import 'package:client/widgets/responsive_layout.dart';
 import 'package:flutter/material.dart';
 
-class MainNavigationWrap extends StatefulWidget {
-  final Widget child;
+enum Pages {
+  LoginPage,
+  HomePage,
+  FolderPage,
+}
 
-  const MainNavigationWrap({
+class MainNavigation extends StatefulWidget {
+  const MainNavigation({
     super.key,
-    required this.child,
   });
 
   @override
-  State<MainNavigationWrap> createState() => _MainNavagationWrapState();
+  State<MainNavigation> createState() => _MainNavagationState();
 }
-class _MainNavagationWrapState extends State<MainNavigationWrap> {
+class _MainNavagationState extends State<MainNavigation> {
+  static Pages selected = Pages.HomePage;
+
+  void navigateTo(Pages page) {
+    setState(() {
+      selected = page;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final child = toPage(selected);
     return ResponsiveLayout(
       mobileBody: Scaffold(
         appBar: AppBar(
           title: const Text("SD Helper"),
           backgroundColor: Theme.of(context).colorScheme.primaryContainer,
         ),
-        endDrawer: const Drawer(
+        endDrawer: Drawer(
           child: MainNavigationListview(
-            header: MainNavigationHeader(),
+            header: const MainNavigationHeader(),
+            onNavigate: navigateTo,
           ),
         ),
-        body: Expanded(child: widget.child),
+        body: Expanded(child: child),
       ),
       desktopBody: Scaffold(
         body: Row(
@@ -37,12 +51,13 @@ class _MainNavagationWrapState extends State<MainNavigationWrap> {
             Container(
               color: Theme.of(context).colorScheme.primaryContainer,
               width: 200,
-              child: const MainNavigationListview(
-                header: MainNavigationHeader(),
+              child: MainNavigationListview(
+                header: const MainNavigationHeader(),
+                onNavigate: navigateTo,
               ),
             ),
             Expanded(
-              child: widget.child
+              child: child
             ),
           ],
         ),

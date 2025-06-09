@@ -1,23 +1,7 @@
 import fs from 'fs';
 import { SettingsManager } from "../settings/settings_manager.js"
-import path from 'path';
-import { IMAGE_FILE_EXTENSIONS } from '../constants/constants.js';
-
-enum FileTypes {
-    Image,
-    JSON,
-    Others,
-}
-interface FileObject {
-    file_name: string,
-    file_type: FileTypes
-}
-interface FolderObject {
-    parent: string,
-    folder_name: string,
-    folder_path: string,
-    objects: Array<FolderObject | FileObject>,
-}
+import { ALLOWED_FILE_TYPES, IMAGE_FILE_EXTENSIONS } from '../constants/constants.js';
+import { FileTypes, FileObject, FolderObject } from './folder_enums.js';
 
 export abstract class FolderManager {
     static _root_folder_paths: Array<string> = [];
@@ -36,17 +20,19 @@ export abstract class FolderManager {
             parent: "",
             folder_name: "/",
             folder_path: "/",
-            objects: [],
+            folders: [],
+            files: []
         }];
         for (const folder_path of this._root_folder_paths) {
             if (!fs.existsSync(folder_path)) this._throwError(`Root Folder '${folder_path}' does not exist!`);
             
             const folder_name = folder_path.split("/").at(-1) ?? "";
-            this._folder_list[0].objects.push({
+            this._folder_list[0].folders.push({
                 parent: "/",
                 folder_name: folder_name,
                 folder_path: `$${folder_name}$`,
-                objects: [],
+                folders: [],
+                files: []
             });
             this._root_folder_map.set(folder_name, folder_path);
 
@@ -65,7 +51,7 @@ export abstract class FolderManager {
      * @param file_path - The shortened file path
      * @returns The actual file path.
      */
-    static _getActualPath(file_path: string): string {
+    static getActualPath(file_path: string): string {
         const splited = file_path.split("$");
         if (splited.length !== 3) this._throwError(`Error occur while translating path '${file_path}' at _getActualPath().`);
         splited[1] = this._root_folder_map.get(splited[1]) ?? "unknown";
@@ -76,13 +62,23 @@ export abstract class FolderManager {
      * @param file_name - name of the file (e.g. aaa.jpg)
      * @returns file type of the file.
      */
-    static _getFileType(file_name: string): FileTypes {
+    static getFileType(file_name: string): FileTypes {
         if (file_name.endsWith(".json")) return FileTypes.JSON;
         for (const extension of IMAGE_FILE_EXTENSIONS) {
             if (file_name.endsWith(extension)) return FileTypes.Image;
         }
         return FileTypes.Others;
     }
+
+    /**
+     * Checks if file_type is one of the files in ALLOWED_FILE_TYPES.
+     * @param file_type - FileType of a file
+     * @returns If the file_type is allowed.
+     */
+    static isAllowedFileType(file_type: FileTypes): boolean {
+        return (ALLOWED_FILE_TYPES.findIndex((type) => file_type === type) !== -1);
+    }
+
     /**
      * Traverse through a folder and returns an array of FolderObject of the folder.
      * @param parent - parent folder of the folder_path
@@ -91,13 +87,14 @@ export abstract class FolderManager {
      * @returns An array of FolderObject.
      */
     static _traverseFolder(parent: string, folder_path: string, recursive: boolean): Array<FolderObject> {
-        const actual_folder_path = this._getActualPath(folder_path);
+        const actual_folder_path = this.getActualPath(folder_path);
         const obj_list = fs.readdirSync(actual_folder_path);
         const folder: FolderObject = {
             parent: parent,
             folder_name: folder_path.split("/").at(-1) ?? "Error",
             folder_path: folder_path,
-            objects: [],
+            folders: [],
+            files: [],
         };
         const folders = [folder];
 
@@ -111,19 +108,25 @@ export abstract class FolderManager {
                     parent: folder_path,
                     folder_name: obj,
                     folder_path: obj_path,
-                    objects: [],
+                    folders: [],
+                    files: []
                 }
-                folder.objects.push(folder_obj);
+                folder.folders.push(folder_obj);
                 if (recursive) {
                     folders.push(...this._traverseFolder(folder_path, obj_path, true));
                 } else {
                     folders.push(folder_obj)
                 }
             } else {
-                folder.objects.push({
-                    file_name: obj,
-                    file_type: this._getFileType(obj),
-                });
+                const file_type = this.
+        getFileType(obj);
+                if (file_type === FileTypes.Image || file_type === FileTypes.JSON) {
+                    folder.files.push({
+                        file_name: obj,
+                        file_type: this.
+                getFileType(obj),
+                    });   
+                }
             }
         }
         return folders;
