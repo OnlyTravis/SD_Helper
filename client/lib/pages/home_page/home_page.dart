@@ -15,7 +15,7 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SimpleText(text: "Welcome Back", scale: 2, weight: FontWeight.bold)
+          SimpleText("Welcome Back", scale: 2, weight: FontWeight.bold)
         ],
       ),
     );

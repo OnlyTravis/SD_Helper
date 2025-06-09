@@ -1,20 +1,30 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
-String _token = "";
+class HttpServer {
+  static String url = "";
+  static String token = "";
+  static final Map<String, String> _header = {};
 
-void setToken(String token) {
-  _token = token;
-}
+  static void init() {
+    url = dotenv.get("SERVER_URL");
+  }
+  static void setToken(String token_) {
+    token = token_;
+    _header["cookie"] = "token=$token;";
+  }
 
-Future<http.Response> fetchServerAPI(
-  String path,
-) async {
-  final url = dotenv.get("SERVER_URL");
-  return http.post(
-    Uri.parse("$url/api/$path"),
-    body: {
-      "token": _token,
-    },
-  );
+  static Future<http.Response> fetchServerAPI(String path) async {
+    return http.post(
+      Uri.parse("$url/api/$path"),
+      headers: _header,
+      body: {
+        "token": token,
+      },
+    );
+  }
+
+  static String fileUrl(String imagePath) {
+    return "$url/api/getFile?token=$token&file=$imagePath";
+  }
 }

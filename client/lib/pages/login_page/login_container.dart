@@ -61,7 +61,7 @@ class _LoginContainerState extends State<LoginContainer> {
         setErrorText("Incorrect Username or Password!");
         return;
       }
-      setToken(body["token"]);
+      HttpServer.setToken(body["token"]);
     } catch (err) {
       setErrorText("An Error occured while logging in!");
       return;

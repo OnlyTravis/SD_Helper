@@ -21,7 +21,7 @@ apiRouter.post("/getFolder", (req, res) => {
     res.status(200).json(folder);
 });
 
-apiRouter.post("/getFile", (req, res) => {
+apiRouter.get("/getFile", (req, res) => {
     if (!req.query || !req.query.file || typeof req.query.file !== "string") {
         res.status(400).send({
             message: "Invalid Request!"

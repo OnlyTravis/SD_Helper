@@ -31,7 +31,13 @@ loginRouter.post("/login", (req, res) => {
         username: username,
         salt: randomUUID(),
     }, secret);
-
+    res.cookie("test", "aaaaaaa", {
+        httpOnly: true,
+        domain: "localhost",
+        secure: false,
+        sameSite: "lax", 
+        maxAge: 3600000, 
+    });
     res.status(200).json({
         success: true,
         token: token,

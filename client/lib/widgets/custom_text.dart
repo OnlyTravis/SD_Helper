@@ -6,9 +6,10 @@ class SimpleText extends StatelessWidget {
   final FontWeight? weight;
   final Color? color;
 
-  const SimpleText({
+  const SimpleText(
+    this.text,
+  {
     super.key,
-    required this.text,
     this.scale,
     this.color,
     this.weight,

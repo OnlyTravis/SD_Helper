@@ -90,17 +90,25 @@ class FolderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: (onTap == null) ? null : () => onTap!(folder),
-      onLongPress: (onLongPress == null) ? null : () => onLongPress!(folder),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.folder, size: size),
-            Text(folder.folderName),
-          ],
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: GestureDetector(
+        onTap: (onTap == null) ? null : () => onTap!(folder),
+        onLongPress: (onLongPress == null) ? null : () => onLongPress!(folder),
+        child: SizedBox(
+          width: size+32,
+          height: size+32,
+          child: Column(
+            children: [
+              Icon(Icons.folder, size: size, color: Theme.of(context).colorScheme.primaryContainer),
+              Text(
+                folder.folderName, 
+                textScaler: const TextScaler.linear(0.8),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ),
     );
