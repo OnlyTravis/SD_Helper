@@ -18,6 +18,7 @@ class _LoginInputTransition extends AnimatedWidget {
       animation: _animation,
       builder: (_, __) => Container(
         decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(5),
           gradient: LinearGradient(
             colors: [
               Theme.of(context).colorScheme.tertiaryContainer,

@@ -14,12 +14,29 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: ResponsiveLayout(
-        mobileBody: const Stack(
+        mobileBody: Stack(
           children: [
-            LoginBackground(),
-            Center(
-              child: LoginContainer(
-                crossAxisAlignment: CrossAxisAlignment.center,
+            const LoginBackground(expanded: false),
+            Align(
+              alignment: Alignment.center,
+              child: Container(
+                width: 300,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 32),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer.withAlpha(130),
+                  boxShadow: [
+                    const BoxShadow(
+                      color: Color.fromARGB(61, 215, 215, 215),
+                      offset: Offset(2, 2),
+                      blurRadius: 4,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                  borderRadius: BorderRadius.circular(20)
+                ),
+                child: const LoginContainer(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                ),
               ),
             ),
           ],

@@ -41,6 +41,18 @@ class _FolderPageState extends State<FolderPage> {
   void onOpenFolder(FolderObject folder) {
     openFolder(folder.folderPath);
   }
+  void onOpenFile(FileObject file) {
+    switch (file.fileType) {
+      case FileTypes.Image:
+        onOpenImage(file);
+        break;
+      default:
+        break;
+    }
+  }
+  void onOpenImage(FileObject image) {
+
+  }
   void onBack() {
     openFolder(currentFolder.parent);
   }
@@ -86,23 +98,26 @@ class _FolderPageState extends State<FolderPage> {
                 ],
               ),
             ),
-            Wrap(
-              direction: Axis.horizontal,
-              alignment: WrapAlignment.spaceBetween,
-              children: [
-                if (showBackFolder) FolderCard(
-                  folder: const FolderObject.back(),
-                  onTap: (_) => onBack(),
-                ),
-                ...folders.map((folder) => FolderCard(
-                  folder: folder,
-                  onTap: onOpenFolder,
-                )),
-                ...files.map((file) => FileCard(
-                  folderPath: currentFolder.folderPath,
-                  file: file,
-                )),
-              ],
+            SizedBox(
+              width: double.infinity,
+              child: Wrap(
+                direction: Axis.horizontal,
+                alignment: WrapAlignment.start,
+                children: [
+                  if (showBackFolder) FolderCard(
+                    folder: const FolderObject.back(),
+                    onTap: (_) => onBack(),
+                  ),
+                  ...folders.map((folder) => FolderCard(
+                    folder: folder,
+                    onTap: onOpenFolder,
+                  )),
+                  ...files.map((file) => FileCard(
+                    folderPath: currentFolder.folderPath,
+                    file: file,
+                  )),
+                ],
+              ),
             ),
           ],
         ),

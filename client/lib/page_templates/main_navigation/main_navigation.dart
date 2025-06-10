@@ -37,12 +37,13 @@ class _MainNavagationState extends State<MainNavigation> {
           backgroundColor: Theme.of(context).colorScheme.primaryContainer,
         ),
         endDrawer: Drawer(
+          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
           child: MainNavigationListview(
             header: const MainNavigationHeader(),
             onNavigate: navigateTo,
           ),
         ),
-        body: Expanded(child: child),
+        body: child,
       ),
       desktopBody: Scaffold(
         body: Row(
@@ -56,9 +57,7 @@ class _MainNavagationState extends State<MainNavigation> {
                 onNavigate: navigateTo,
               ),
             ),
-            Expanded(
-              child: child
-            ),
+            child,
           ],
         ),
       ),
