@@ -27,7 +27,7 @@ class FileCard extends StatelessWidget {
         break;
       case FileTypes.Image:
         fileIcon = Image.network(
-          HttpServer.fileUrl("$folderPath/${file.fileName}"),
+          HttpServer.imageUrl("$folderPath/${file.fileName}", true),
           width: size,
           height: size,
         );

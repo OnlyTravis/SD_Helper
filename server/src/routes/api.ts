@@ -1,5 +1,7 @@
 import { Router } from "express";
 import { FolderManager } from "../code/folders/folder_manager.js";
+import sharp from "sharp";
+import { FileTypes } from "../code/folders/folder_enums.js";
 
 const apiRouter = Router();
 
@@ -21,17 +23,23 @@ apiRouter.post("/getFolder", (req, res) => {
     res.status(200).json(folder);
 });
 
-apiRouter.get("/getFile", (req, res) => {
-    if (!req.query || !req.query.file || typeof req.query.file !== "string") {
+enum ImageSize {
+    Original = -1,
+    Small = 200,
+}
+apiRouter.get("/getImage", async (req, res) => {
+    if (!req.query || !req.query.image || typeof req.query.image !== "string") {
         res.status(400).send({
             message: "Invalid Request!"
         });
         return;
     }
+    let size = ImageSize.Original;
+    if (req.query.size === "s") size = ImageSize.Small;
 
-    const file_path = req.query.file;
+    const file_path = req.query.image;
     const file_type = FolderManager.getFileType(file_path);
-    if (!FolderManager.isAllowedFileType(file_type)) {
+    if (file_type !== FileTypes.Image) {
         res.status(400).send({
             message: "File Type not allowed!"
         });
@@ -39,7 +47,19 @@ apiRouter.get("/getFile", (req, res) => {
     }
 
     const actual_path = FolderManager.getActualPath(file_path);
-    res.status(200).sendFile(actual_path);
+    if (size === ImageSize.Original) {
+        res.status(200).sendFile(actual_path);
+        return;
+    } else if (size === ImageSize.Small) {
+        const meta = await sharp(actual_path).metadata();
+        if (meta.width >= meta.height) {
+            const buffer = await sharp(actual_path).resize(200).toBuffer();
+            res.status(200).send(buffer);
+        } else {
+            const buffer = await sharp(actual_path).resize(null, 200).toBuffer();
+            res.status(200).send(buffer);
+        }
+    }
 });
 
 export default apiRouter;

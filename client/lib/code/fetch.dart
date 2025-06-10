@@ -24,7 +24,7 @@ class HttpServer {
     );
   }
 
-  static String fileUrl(String imagePath) {
-    return "$url/api/getFile?token=$token&file=$imagePath";
+  static String imageUrl(String imagePath, bool isSmall) {
+    return "$url/api/getImage?token=$token&image=$imagePath${isSmall ? "&size=s" : ""}";
   }
 }
