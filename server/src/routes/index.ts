@@ -2,7 +2,7 @@ import { Application } from 'express';
 
 import loginRouter from './login.js';
 import authRouter from './auth.js';
-import apiRouter from './api.js';
+import apiRouter from './api/index.js';
 
 
 export function applyRouters(app: Application) {

@@ -1,6 +1,7 @@
 import 'package:client/code/fetch.dart';
 import 'package:client/widgets/fullscreen_image/button_group.dart';
 import 'package:client/widgets/fullscreen_image/close_button.dart';
+import 'package:client/widgets/fullscreen_image/image_name.dart';
 import 'package:client/widgets/fullscreen_image/side_button.dart';
 import 'package:client/widgets/fullscreen_image/snap_physics.dart';
 import 'package:client/widgets/responsive_layout.dart';
@@ -88,8 +89,17 @@ class _FullscreenImageState extends State<FullscreenImage> {
               );
             }
           ),
-          FullscreenImageCloseButton(isVisible: _buttonsShown, onTap: _onExit),
-          FullscreenImageButtonGroup(isVisible: _buttonsShown),
+          FullscreenImageCloseButton(visible: _buttonsShown, onTap: _onExit),
+          FullscreenImageButtonGroup(
+            visible: _buttonsShown,
+            onRename: () {},
+            onMove: () {},
+            onDelete: () {},
+          ),
+          FullscreenImageName(
+            visible: _buttonsShown, 
+            imageName: Text(widget.imageNames[_currentIndex]),
+          ),
         ],
       ),
     );
@@ -110,6 +120,16 @@ class _FullscreenImageState extends State<FullscreenImage> {
             align: Alignment.topRight, 
             icon: Icons.arrow_right,
             onTap: () => _onChangeImage(1),
+          ),
+          FullscreenImageButtonGroup(
+            visible: _buttonsShown,
+            onRename: () {},
+            onMove: () {},
+            onDelete: () {},
+          ),
+          FullscreenImageName(
+            visible: _buttonsShown, 
+            imageName: Text(widget.imageNames[_currentIndex]),
           ),
         ],
       ),
