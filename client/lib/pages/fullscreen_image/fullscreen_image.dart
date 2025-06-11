@@ -1,9 +1,10 @@
+import 'package:client/code/dialog.dart';
 import 'package:client/code/fetch.dart';
-import 'package:client/widgets/fullscreen_image/button_group.dart';
-import 'package:client/widgets/fullscreen_image/close_button.dart';
-import 'package:client/widgets/fullscreen_image/image_name.dart';
-import 'package:client/widgets/fullscreen_image/side_button.dart';
-import 'package:client/widgets/fullscreen_image/snap_physics.dart';
+import 'package:client/pages/fullscreen_image/button_group.dart';
+import 'package:client/pages/fullscreen_image/close_button.dart';
+import 'package:client/pages/fullscreen_image/image_name.dart';
+import 'package:client/pages/fullscreen_image/side_button.dart';
+import 'package:client/pages/fullscreen_image/snap_physics.dart';
 import 'package:client/widgets/responsive_layout.dart';
 import 'package:flutter/material.dart';
 
@@ -64,6 +65,36 @@ class _FullscreenImageState extends State<FullscreenImage> {
   void _onExit() {
     Navigator.of(context).pop();
   }
+  void _onRename() async {
+
+  }
+  void _onMove() async {
+
+  }
+  void _onDelete() async {
+    // 1. Confirm Delete
+    final ans = await confirm(context, title: "Confirm Delete", text: "Are you sure you want to delete this image?");
+    if (!ans) return;
+
+    // 2. Send Delete Request
+    try {
+      HttpServer.postServerAPI("deleteImages", {
+        "images": [widget.imageNames[_currentIndex]]
+      });
+    } catch (err) {
+      if (mounted) alertSnackbar(context, text: "Something went wrong while requesting to delete image! ErrorText: ($err)");
+      return;
+    }
+
+    // 3. Move to adjacent image, if none => exit
+    if (_currentIndex < widget.imageNames.length-1) {
+      _onChangeImage(1);
+    } else if (_currentIndex > 0) {
+      _onChangeImage(-1);
+    } else {
+      if (mounted) _onExit();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -92,9 +123,9 @@ class _FullscreenImageState extends State<FullscreenImage> {
           FullscreenImageCloseButton(visible: _buttonsShown, onTap: _onExit),
           FullscreenImageButtonGroup(
             visible: _buttonsShown,
-            onRename: () {},
-            onMove: () {},
-            onDelete: () {},
+            onRename: _onRename,
+            onMove: _onMove,
+            onDelete: _onDelete,
           ),
           FullscreenImageName(
             visible: _buttonsShown, 
@@ -123,9 +154,9 @@ class _FullscreenImageState extends State<FullscreenImage> {
           ),
           FullscreenImageButtonGroup(
             visible: _buttonsShown,
-            onRename: () {},
-            onMove: () {},
-            onDelete: () {},
+            onRename: _onRename,
+            onMove: _onMove,
+            onDelete: _onDelete,
           ),
           FullscreenImageName(
             visible: _buttonsShown, 

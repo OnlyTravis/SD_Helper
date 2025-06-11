@@ -23,6 +23,14 @@ class HttpServer {
       },
     );
   }
+  static Future<http.Response> postServerAPI(String path, Map<String, dynamic> body) async {
+    body["token"] = token;
+    return http.post(
+      Uri.parse("$url/api/$path"),
+      headers: _header,
+      body: body,
+    );
+  }
 
   static String imageUrl(String imagePath, bool isSmall) {
     return "$url/api/getImage?token=$token&image=$imagePath${isSmall ? "&size=s" : ""}";

@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:client/code/fetch.dart';
-import 'package:client/widgets/fullscreen_image/fullscreen_image.dart';
+import 'package:client/pages/fullscreen_image/fullscreen_image.dart';
 import 'package:client/pages/folder_page/page_navigation_buttons.dart';
 import 'package:client/widgets/custom_text.dart';
 import 'package:client/widgets/file_card.dart';
