@@ -30,12 +30,9 @@ class _MainNavagationState extends State<MainNavigation> {
   @override
   Widget build(BuildContext context) {
     final child = toPage(selected);
+
     return ResponsiveLayout(
       mobileBody: Scaffold(
-        appBar: AppBar(
-          title: const Text("SD Helper"),
-          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-        ),
         endDrawer: Drawer(
           backgroundColor: Theme.of(context).colorScheme.primaryContainer,
           child: MainNavigationListview(
@@ -43,7 +40,16 @@ class _MainNavagationState extends State<MainNavigation> {
             onNavigate: navigateTo,
           ),
         ),
-        body: child,
+        body: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppBar(
+              title: const Text("SD Helper"),
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+            ),
+            child,
+          ],
+        ),
       ),
       desktopBody: Scaffold(
         body: Row(

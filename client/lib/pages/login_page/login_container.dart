@@ -23,11 +23,22 @@ class _LoginContainerState extends State<LoginContainer> {
   final _passwordController = TextEditingController();
   String errorText = "";
 
+  @override
+  void initState() {
+    // for dev
+    _usernameController.text = 'aaa';
+    _passwordController.text = 'bbb';
+    onLogin();
+    
+    super.initState();
+  }
+
   void setErrorText(String text) {
     setState(() {
       errorText = text;
     });
   }
+
   Future<void> onLogin() async {
     final String username = _usernameController.text;
     final String password = _passwordController.text;

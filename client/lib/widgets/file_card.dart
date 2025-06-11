@@ -43,8 +43,8 @@ class FileCard extends StatelessWidget {
         onLongPress: (onLongPress == null) ? null : () => onLongPress!(file),
         child: SizedBox(
           width: size+32,
-          height: size+32,
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               fileIcon,
               Text(

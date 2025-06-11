@@ -1,12 +1,20 @@
 import 'dart:convert';
 
 import 'package:client/code/fetch.dart';
+import 'package:client/widgets/fullscreen_image/fullscreen_image.dart';
 import 'package:client/pages/folder_page/page_navigation_buttons.dart';
 import 'package:client/widgets/custom_text.dart';
 import 'package:client/widgets/file_card.dart';
 import 'package:client/widgets/folder_card.dart';
+import 'package:client/widgets/responsive_layout.dart';
 import 'package:flutter/material.dart';
 
+enum DisplayStyle {
+  SmallIcon,
+  MediumIcon,
+  LargeIcon,
+  List,
+}
 class FolderPage extends StatefulWidget {
   const FolderPage({super.key});
 
@@ -14,10 +22,12 @@ class FolderPage extends StatefulWidget {
   State<FolderPage> createState() => _FolderPageState();
 }
 class _FolderPageState extends State<FolderPage> {
-  int currentPage = 0;
-  int perPage = 20;
-  bool isOpeningFolder = false;
-  FolderObject currentFolder = const FolderObject.loading();
+  static int currentPage = 0;
+  static DisplayStyle displayStyle = DisplayStyle.LargeIcon;
+
+  static bool isOpeningFolder = false;
+  static FolderObject currentFolder = const FolderObject.loading();
+  static List<String> imageNames = [];
 
   Future<void> openFolder(String folderPath) async {
     // 1. Return if already opening a folder
@@ -34,6 +44,7 @@ class _FolderPageState extends State<FolderPage> {
     setState(() {
       currentPage = 0;
       currentFolder = folder;
+      imageNames = folder.files.where((file) => file.fileType == FileTypes.Image).map((img) => img.fileName).toList();
       isOpeningFolder = false;
     });
   }
@@ -41,6 +52,7 @@ class _FolderPageState extends State<FolderPage> {
   void onOpenFolder(FolderObject folder) {
     openFolder(folder.folderPath);
   }
+
   void onOpenFile(FileObject file) {
     switch (file.fileType) {
       case FileTypes.Image:
@@ -50,9 +62,18 @@ class _FolderPageState extends State<FolderPage> {
         break;
     }
   }
-  void onOpenImage(FileObject image) {
-
+  Future<void> onOpenImage(FileObject image) async {
+    final index = imageNames.indexOf(image.fileName);
+    await showDialog(
+        context: context, 
+        builder: (_) => FullscreenImage(
+            folderPath: currentFolder.folderPath,
+            index: index,
+            imageNames: imageNames, 
+        ),
+    );
   }
+
   void onBack() {
     openFolder(currentFolder.parent);
   }
@@ -62,18 +83,41 @@ class _FolderPageState extends State<FolderPage> {
     });
   }
 
+  int getPerPage(DisplayStyle style) {
+    final bool isDesktop = isWideScreen(context);
+    int perPage = 5;
+    switch (style) {
+      case DisplayStyle.LargeIcon:
+        perPage = isDesktop ? 20 : 10;
+        break;
+      default:
+        break;
+    }
+    return perPage;
+  }
+
   @override
   void initState() {
-    openFolder("/");
     super.initState();
+    if (currentFolder == const FolderObject.loading()) {
+        openFolder("/");
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    return Expanded(child: _pageBody());
+  }
+  Widget _pageBody() {
+    // 1. Files / Folders display
+    final perPage = getPerPage(displayStyle);
     final showBackFolder = (currentFolder.folderPath != "/");
     final folderCount = currentFolder.folders.length;
     final fileCount = currentFolder.files.length;
     final maxPage = ((folderCount + fileCount) / perPage).floor();
+    if (currentPage > maxPage) setState(() {
+      currentPage = maxPage;
+    });
 
     final List<FolderObject> folders = (currentPage*perPage < folderCount) ? currentFolder.folders.sublist(
       currentPage*perPage, 
@@ -86,21 +130,20 @@ class _FolderPageState extends State<FolderPage> {
 
     return Stack(
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              color: Theme.of(context).colorScheme.secondaryContainer,
-              child: Row(
-                children: [
-                  SimpleText("Current Folder : '${currentFolder.folderPath}'", scale: 1.4),
-                ],
+        SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                color: Theme.of(context).colorScheme.secondaryContainer,
+                child: Row(
+                  children: [
+                    SimpleText("Current Folder : '${currentFolder.folderPath}'", scale: 1.4),
+                  ],
+                ),
               ),
-            ),
-            SizedBox(
-              width: double.infinity,
-              child: Wrap(
+              Wrap(
                 direction: Axis.horizontal,
                 alignment: WrapAlignment.start,
                 children: [
@@ -115,11 +158,12 @@ class _FolderPageState extends State<FolderPage> {
                   ...files.map((file) => FileCard(
                     folderPath: currentFolder.folderPath,
                     file: file,
+                    onTap: onOpenFile,
                   )),
                 ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         Align(
           alignment: Alignment.bottomCenter,
