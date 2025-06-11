@@ -45,6 +45,47 @@ export abstract class FolderManager {
         return this._folder_list.find((folder) => folder.folder_path === folder_path);
     }
 
+    static fileExist(file_path: string): boolean {
+        const path_length = file_path.length;
+        const file_name = file_path.split("/").at(-1) ?? "";
+        const folder_path = file_path.substring(0, path_length-file_name.length-1);
+
+        const folder = this.getFolder(folder_path);
+        if (!folder) return false;
+
+        const file = folder.files.find((f) => f.file_name === file_name);
+        if (!file) return false;
+
+        const actual_path = this.getActualPath(file_path);
+        if (!fs.existsSync(actual_path)) {
+            console.log(`Error: A file exists in FolderManager but is not present in file system!\nFile: ${file_path} | ${actual_path}`);
+            return false;
+        }
+        return true;
+    }
+
+    static deleteFile(file_path: string): boolean {
+        const path_length = file_path.length;
+        const file_name = file_path.split("/").at(-1) ?? "";
+        const folder_path = file_path.substring(0, path_length-file_name.length-1);
+
+        const folder = this.getFolder(folder_path);
+        if (!folder) return false;
+
+        const index = folder.files.findIndex((f) => f.file_name === file_name);
+        if (index === -1) return false;
+
+        const actual_path = this.getActualPath(file_path);
+        try {
+            fs.rmSync(actual_path);
+            folder.files.splice(index, 1);
+            return true;
+        } catch (error) {
+            console.log(`An error occured when deleting a file!\n Deleting : ${file_path} | ${actual_path}.\n Error: ${error}`);
+            return false;
+        }
+    }
+
     /**
      * Turns a shortened file path into an actual file path.
      * (e.g. /$Download$/folder => /home/username/Download/folder)
@@ -119,7 +160,7 @@ export abstract class FolderManager {
                 }
             } else {
                 const file_type = this.
-        getFileType(obj);
+                getFileType(obj);
                 if (file_type === FileTypes.Image || file_type === FileTypes.JSON) {
                     folder.files.push({
                         file_name: obj,

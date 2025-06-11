@@ -25,8 +25,8 @@ export async function initEnv() {
         );
 
         fs.writeFileSync(".env", `
-            USERNAME = ${username}
-            PASSWORD = ${password}
+            USERNAME_ = ${username}
+            PASSWORD_ = ${password}
             PORT = ${port}
             SECRET = ${randomUUID()}
             IS_DEV = ${is_dev.toLowerCase() === "y"}

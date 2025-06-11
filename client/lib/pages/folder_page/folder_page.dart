@@ -48,11 +48,26 @@ class _FolderPageState extends State<FolderPage> {
       isOpeningFolder = false;
     });
   }
+  Future<void> updateFolder() async {
+    if (isOpeningFolder) return;
+    setState(() {
+      isOpeningFolder = true;
+    });
+
+    final res = await HttpServer.fetchServerAPI("getFolder?folder=${currentFolder.folderPath}");
+    final body = jsonDecode(res.body);
+    final folder = FolderObject.fromMap(body);
+
+    setState(() {
+      currentFolder = folder;
+      imageNames = folder.files.where((file) => file.fileType == FileTypes.Image).map((img) => img.fileName).toList();
+      isOpeningFolder = false;
+    });
+  }
 
   void onOpenFolder(FolderObject folder) {
     openFolder(folder.folderPath);
   }
-
   void onOpenFile(FileObject file) {
     switch (file.fileType) {
       case FileTypes.Image:
@@ -65,12 +80,13 @@ class _FolderPageState extends State<FolderPage> {
   Future<void> onOpenImage(FileObject image) async {
     final index = imageNames.indexOf(image.fileName);
     await showDialog(
-        context: context, 
-        builder: (_) => FullscreenImage(
-            folderPath: currentFolder.folderPath,
-            index: index,
-            imageNames: imageNames, 
-        ),
+      context: context, 
+      builder: (_) => FullscreenImage(
+        folderPath: currentFolder.folderPath,
+        index: index,
+        imageNames: imageNames, 
+        onUpdate: updateFolder,
+      ),
     );
   }
 

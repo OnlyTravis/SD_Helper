@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:client/code/dialog.dart';
 import 'package:client/code/fetch.dart';
 import 'package:client/pages/fullscreen_image/button_group.dart';
@@ -32,12 +34,14 @@ class FullscreenImage extends StatefulWidget {
   final String folderPath;
   final int index;
   final List<String> imageNames;
+  final VoidCallback onUpdate;
 
   const FullscreenImage({
     super.key,
     required this.folderPath,
     required this.index,
     required this.imageNames,
+    required this.onUpdate,
   });
 
   @override
@@ -77,9 +81,10 @@ class _FullscreenImageState extends State<FullscreenImage> {
     if (!ans) return;
 
     // 2. Send Delete Request
+    final imageName = widget.imageNames[_currentIndex];
     try {
       HttpServer.postServerAPI("deleteImages", {
-        "images": [widget.imageNames[_currentIndex]]
+        "images": jsonEncode(["${widget.folderPath}/$imageName"]),
       });
     } catch (err) {
       if (mounted) alertSnackbar(context, text: "Something went wrong while requesting to delete image! ErrorText: ($err)");
@@ -87,13 +92,19 @@ class _FullscreenImageState extends State<FullscreenImage> {
     }
 
     // 3. Move to adjacent image, if none => exit
+    bool exitPage = false;
     if (_currentIndex < widget.imageNames.length-1) {
       _onChangeImage(1);
     } else if (_currentIndex > 0) {
       _onChangeImage(-1);
     } else {
-      if (mounted) _onExit();
+      exitPage = true;
     }
+
+    // 4. Call update on parent
+    widget.onUpdate();
+    if (mounted) alertSnackbar(context, text: "Image '$imageName' Deleted!");
+    if (exitPage && mounted) _onExit();
   }
 
   @override

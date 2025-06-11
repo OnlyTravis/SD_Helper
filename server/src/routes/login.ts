@@ -17,7 +17,7 @@ loginRouter.post("/login", (req, res) => {
     // 2. Check Username & Password
     const username: string = req.body.username;
     const password: string = req.body.password;
-    if (username !== process.env.USERNAME || password !== process.env.PASSWORD) {
+    if (username !== process.env.USERNAME_ || password !== process.env.PASSWORD_) {
         res.status(401).json({
             success: false,
             message: "Incorrect Username or Password!",
@@ -31,13 +31,7 @@ loginRouter.post("/login", (req, res) => {
         username: username,
         salt: randomUUID(),
     }, secret);
-    res.cookie("test", "aaaaaaa", {
-        httpOnly: true,
-        domain: "localhost",
-        secure: false,
-        sameSite: "lax", 
-        maxAge: 3600000, 
-    });
+    
     res.status(200).json({
         success: true,
         token: token,

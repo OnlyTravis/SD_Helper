@@ -23,7 +23,7 @@ class HttpServer {
       },
     );
   }
-  static Future<http.Response> postServerAPI(String path, Map<String, dynamic> body) async {
+  static Future<http.Response> postServerAPI(String path, Map<String, String> body) async {
     body["token"] = token;
     return http.post(
       Uri.parse("$url/api/$path"),
