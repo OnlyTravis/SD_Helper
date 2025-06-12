@@ -64,6 +64,34 @@ export abstract class FolderManager {
         return true;
     }
 
+    static renameFile(file_path: string, new_name: string) {
+        try {
+            // 1. Get original file index
+            const path_length = file_path.length;
+            const file_name = file_path.split("/").at(-1)!;
+            const folder_path = file_path.substring(0, path_length-file_name.length-1);
+            const file_extension = file_name.split(".").at(-1)!
+
+            const folder = this.getFolder(folder_path);
+            if (!folder) return false;
+
+            const index = folder.files.findIndex((f) => f.file_name === file_name);
+            if (index === -1) return false;
+
+            // 2. Check if new name is taken
+            const new_path = `${folder_path}/${new_name}.${file_extension}`;
+            if (FolderManager.fileExist(new_path)) return false;
+            const actual_old_path = this.getActualPath(file_path);
+            const actual_new_path = this.getActualPath(new_path);
+        
+            fs.renameSync(actual_old_path, actual_new_path);
+            folder.files[index].file_name = `${new_name}.${file_extension}`;
+            return true;
+        } catch (error) {
+            console.log(`An error occured when renaming a file! Error: ${error}`);
+            return false;
+        }
+    }
     static deleteFile(file_path: string): boolean {
         const path_length = file_path.length;
         const file_name = file_path.split("/").at(-1) ?? "";

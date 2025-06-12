@@ -70,7 +70,43 @@ class _FullscreenImageState extends State<FullscreenImage> {
     Navigator.of(context).pop();
   }
   void _onRename() async {
+    // 1. Input new name
+    final newName = await alertInput<String>(
+      context, 
+      title: "Rename Image",
+      text: "Enter new name of image : ",
+    );
+    if (newName == null || newName.isEmpty) {
+      if (mounted) alert(context, text: "Invalid new name.");
+      return;
+    }
 
+    // 2. Check if image with new name already exist
+    final fileExtension = widget.imageNames[_currentIndex].split(".").last;
+    final newFileName = "$newName.$fileExtension";
+    if (widget.imageNames.contains(newFileName)) {
+      if (mounted) alert(context, text: "An image with that name already exist!");
+      return;
+    }
+
+    // 3. Send request
+    final imageName = widget.imageNames[_currentIndex];
+    try {
+      HttpServer.postServerAPI("renameImage", {
+        "image": "${widget.folderPath}/$imageName",
+        "newName": newName,
+      });
+    } catch (err) {
+      if (mounted) alert(context, text: "Something went wrong while renaming image! ErrorText: ($err)");
+      return;
+    }
+
+    // 4. Call update on parent
+    widget.onUpdate();
+    if (mounted) alertSnackbar(context, text: "Image '$imageName' Renamed to $newFileName!");
+    setState(() {
+      widget.imageNames[_currentIndex] = newFileName;
+    });
   }
   void _onMove() async {
 
@@ -87,7 +123,7 @@ class _FullscreenImageState extends State<FullscreenImage> {
         "images": jsonEncode(["${widget.folderPath}/$imageName"]),
       });
     } catch (err) {
-      if (mounted) alertSnackbar(context, text: "Something went wrong while requesting to delete image! ErrorText: ($err)");
+      if (mounted) alert(context, text: "Something went wrong while requesting to delete image! ErrorText: ($err)");
       return;
     }
 
