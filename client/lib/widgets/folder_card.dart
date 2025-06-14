@@ -77,6 +77,7 @@ class FolderObject {
 class FolderCard extends StatelessWidget {
   final FolderObject folder;
   final double size;
+  final bool isSelected;
   final void Function(FolderObject)? onTap;
   final void Function(FolderObject)? onLongPress;
 
@@ -84,32 +85,43 @@ class FolderCard extends StatelessWidget {
     super.key,
     required this.folder,
     this.size = 64,
+    this.isSelected = false,
     this.onTap,
     this.onLongPress,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: GestureDetector(
-        onTap: (onTap == null) ? null : () => onTap!(folder),
-        onLongPress: (onLongPress == null) ? null : () => onLongPress!(folder),
-        child: SizedBox(
-          width: size+32,
-          height: size+32,
-          child: Column(
-            children: [
-              Icon(Icons.folder, size: size, color: Theme.of(context).colorScheme.primaryContainer),
-              Text(
-                folder.folderName, 
-                textScaler: const TextScaler.linear(0.8),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
+    return SizedBox(
+      width: size+32,
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: GestureDetector(
+              onTap: (onTap == null) ? null : () => onTap!(folder),
+              onLongPress: (onLongPress == null) ? null : () => onLongPress!(folder),
+              child: SizedBox(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.folder, size: size, color: Theme.of(context).colorScheme.primaryContainer),
+                    Text(
+                      folder.folderName, 
+                      textScaler: const TextScaler.linear(0.8),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
-            ],
+            ),
           ),
-        ),
+          if (isSelected) Align(
+            alignment: Alignment.topRight,
+            child: Icon(Icons.check_box, color: Theme.of(context).colorScheme.primary),
+          ),
+        ],
       ),
     );
   }

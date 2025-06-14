@@ -22,7 +22,7 @@ class FolderPageTopBar extends StatelessWidget {
           if (selectedCount > 0) ...[
             const SizedBox(width: 16),
             SimpleText("Selected : $selectedCount", scale: 1.4),
-          ]
+          ],
         ],
       ),
     );

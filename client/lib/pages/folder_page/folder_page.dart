@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:client/code/fetch.dart';
+import 'package:client/pages/folder_page/action_button_group.dart';
 import 'package:client/pages/folder_page/top_bar.dart';
 import 'package:client/pages/fullscreen_image/fullscreen_image.dart';
 import 'package:client/pages/folder_page/page_navigation_buttons.dart';
@@ -15,15 +16,7 @@ enum DisplayStyle {
   LargeIcon,
   List,
 }
-class _SelectedItem {
-  final String folderPath;
-  final String fileName;
-  
-  const _SelectedItem({
-    required this.folderPath,
-    required this.fileName,
-  });
-}
+
 class FolderPage extends StatefulWidget {
   const FolderPage({super.key});
 
@@ -32,33 +25,16 @@ class FolderPage extends StatefulWidget {
 }
 class _FolderPageState extends State<FolderPage> {
   static int _currentPage = 0;
-  static DisplayStyle _displayStyle = DisplayStyle.LargeIcon;
+  static final DisplayStyle _displayStyle = DisplayStyle.LargeIcon;
 
   static bool _isOpeningFolder = false;
   static FolderObject _currentFolder = const FolderObject.loading();
   static List<String> _imageNames = [];
 
-  static List<_SelectedItem> _selected = [];
+  static List<bool> _isSelected = [];
+  static int _selectFileCount = 0;
+  static int _selectFolderCount = 0;
 
-  Future<void> openFolder(String folderPath) async {
-    // 1. Return if already opening a folder
-    if (_isOpeningFolder) return;
-    setState(() {
-      _isOpeningFolder = true;
-    });
-
-    // 2. Fetch folder content from server & Update _currentFolder
-    final res = await HttpServer.fetchServerAPI("getFolder?folder=$folderPath");
-    final body = jsonDecode(res.body);
-    final folder = FolderObject.fromMap(body);
-
-    setState(() {
-      _currentPage = 0;
-      _currentFolder = folder;
-      _imageNames = folder.files.where((file) => file.fileType == FileTypes.Image).map((img) => img.fileName).toList();
-      _isOpeningFolder = false;
-    });
-  }
   Future<void> updateFolder() async {
     if (_isOpeningFolder) return;
     setState(() {
@@ -76,9 +52,50 @@ class _FolderPageState extends State<FolderPage> {
     });
   }
 
-  void onOpenFolder(FolderObject folder) {
-    openFolder(folder.folderPath);
+  Future<void> openFolder(String folderPath) async {
+    // 1. Return if already opening a folder
+    if (_isOpeningFolder) return;
+    setState(() {
+      _isOpeningFolder = true;
+    });
+
+    // 2. Fetch folder content from server & Update _currentFolder
+    final res = await HttpServer.fetchServerAPI("getFolder?folder=$folderPath");
+    final body = jsonDecode(res.body);
+    final folder = FolderObject.fromMap(body);
+
+    setState(() {
+      _currentPage = 0;
+      _currentFolder = folder;
+      _isSelected = List.filled(folder.files.length + folder.folders.length, false);
+      _selectFileCount = 0;
+      _selectFolderCount = 0;
+      _imageNames = folder.files.where((file) => file.fileType == FileTypes.Image).map((img) => img.fileName).toList();
+      _isOpeningFolder = false;
+    });
   }
+  void onFolderTap(FolderObject folder) {
+    if (_selectFileCount + _selectFolderCount == 0) {
+      openFolder(folder.folderPath);
+      return;
+    }
+    onFolderSelect(folder);
+  }
+  void onFolderSelect(FolderObject folder) {
+    final folderIndex = _currentFolder.folders.indexOf(folder);
+    if (folderIndex == -1) return;
+
+    setState(() {
+      if (_isSelected[folderIndex]) {
+        _isSelected[folderIndex] = false;
+        _selectFolderCount--;
+      } else {
+        _isSelected[folderIndex] = true;
+        _selectFolderCount++;
+      }
+    });
+  }
+
   void onOpenFile(FileObject file) {
     switch (file.fileType) {
       case FileTypes.Image:
@@ -111,27 +128,25 @@ class _FolderPageState extends State<FolderPage> {
   }
 
   void onFileTap(FileObject file) {
-    if (_selected.isEmpty) {
+    if (_selectFileCount + _selectFolderCount == 0) {
       onOpenFile(file);
       return;
     }
     onFileSelect(file);
   }
   void onFileSelect(FileObject file) {
-    final index = _selected.indexWhere((selected) => selected.fileName == file.fileName && selected.folderPath == _currentFolder.folderPath);
-    if (index == -1) {
-      // Select File
-      setState(() {
-        _selected.add(_SelectedItem(
-          folderPath: _currentFolder.folderPath, 
-          fileName: file.fileName,
-        ));
-      });
-      return;
-    }
-    // Deselect file
+    final folderCount = _currentFolder.folders.length;
+    final fileIndex = _currentFolder.files.indexOf(file);
+    if (fileIndex == -1) return;
+
     setState(() {
-      _selected.removeAt(index);
+      if (_isSelected[fileIndex + folderCount]) {
+        _isSelected[fileIndex + folderCount] = false;
+        _selectFileCount--;
+      } else {
+        _isSelected[fileIndex + folderCount] = true;
+        _selectFileCount++;
+      }
     });
   }
 
@@ -171,7 +186,6 @@ class _FolderPageState extends State<FolderPage> {
     if (_currentPage > maxPage) setState(() {
       _currentPage = maxPage;
     });
-    final selectedCount = _selected.length;
 
     final List<FolderObject> folders = (_currentPage*perPage < folderCount) ? _currentFolder.folders.sublist(
       _currentPage*perPage, 
@@ -190,27 +204,33 @@ class _FolderPageState extends State<FolderPage> {
             children: [
               FolderPageTopBar(
                 folderPath: _currentFolder.folderPath,
-                selectedCount: selectedCount,
+                selectedCount: _selectFileCount + _selectFolderCount,
               ),
-              Wrap(
-                direction: Axis.horizontal,
-                alignment: WrapAlignment.start,
-                children: [
-                  if (showBackFolder) FolderCard(
-                    folder: const FolderObject.back(),
-                    onTap: (_) => onBack(),
-                  ),
-                  ...folders.map((folder) => FolderCard(
-                    folder: folder,
-                    onTap: onOpenFolder,
-                  )),
-                  ...files.map((file) => FileCard(
-                    folderPath: _currentFolder.folderPath,
-                    file: file,
-                    onTap: onFileTap,
-                    onLongPress: onFileSelect,
-                  )),
-                ],
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: Wrap(
+                  direction: Axis.horizontal,
+                  alignment: WrapAlignment.start,
+                  children: [
+                    if (showBackFolder) FolderCard(
+                      folder: const FolderObject.back(),
+                      onTap: (_) => onBack(),
+                    ),
+                    ...folders.asMap().entries.map((entry) => FolderCard(
+                      folder: entry.value,
+                      isSelected: _isSelected[entry.key],
+                      onTap: onFolderTap,
+                      onLongPress: onFolderSelect,
+                    )),
+                    ...files.asMap().entries.map((entry) => FileCard(
+                      folderPath: _currentFolder.folderPath,
+                      file: entry.value,
+                      isSelected: _isSelected[entry.key + folderCount],
+                      onTap: onFileTap,
+                      onLongPress: onFileSelect,
+                    )),
+                  ],
+                ),
               ),
             ],
           ),
@@ -222,6 +242,18 @@ class _FolderPageState extends State<FolderPage> {
             maxPage: maxPage, 
             toPage: toPage
           ),
+        ),
+        FolderPageActionButtonGroup(
+          isEditing: (_selectFileCount + _selectFolderCount > 0),
+          fileOnly: (_selectFolderCount == 0),
+          folderOnly: (_selectFileCount == 0),
+          singleFile: (_selectFileCount == 1),
+          singleFolder: (_selectFolderCount == 1),
+          onRenameFile: () {},
+          onMassRenameFiles: () {},
+          onRenameFolder: () {},
+          onMove: () {},
+          onDelete: () {},
         ),
       ],
     );

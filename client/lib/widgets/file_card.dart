@@ -6,6 +6,7 @@ class FileCard extends StatelessWidget {
   final String folderPath;
   final FileObject file;
   final double size;
+  final bool isSelected;
   final void Function(FileObject)? onTap;
   final void Function(FileObject)? onLongPress;
 
@@ -14,6 +15,7 @@ class FileCard extends StatelessWidget {
     required this.folderPath,
     required this.file,
     this.size = 64,
+    this.isSelected = false,
     this.onTap,
     this.onLongPress,
   });
@@ -36,26 +38,36 @@ class FileCard extends StatelessWidget {
         fileIcon = Icon(Icons.file_copy, size: size, color: Theme.of(context).colorScheme.primaryContainer);
         break;
     }
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: GestureDetector(
-        onTap: (onTap == null) ? null : () => onTap!(file),
-        onLongPress: (onLongPress == null) ? null : () => onLongPress!(file),
-        child: SizedBox(
-          width: size+32,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              fileIcon,
-              Text(
-                file.fileName, 
-                textScaler: const TextScaler.linear(0.8),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
+    return SizedBox(
+      width: size+32,
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: GestureDetector(
+              onTap: (onTap == null) ? null : () => onTap!(file),
+              onLongPress: (onLongPress == null) ? null : () => onLongPress!(file),
+              child: SizedBox(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    fileIcon,
+                    Text(
+                      file.fileName, 
+                      textScaler: const TextScaler.linear(0.8),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
-            ],
+            ),
           ),
-        ),
+          if (isSelected) Align(
+            alignment: Alignment.topRight,
+            child: Icon(Icons.check_box, color: Theme.of(context).colorScheme.primary),
+          ),
+        ],
       ),
     );
   }
