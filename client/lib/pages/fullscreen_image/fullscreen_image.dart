@@ -92,8 +92,8 @@ class _FullscreenImageState extends State<FullscreenImage> {
     // 3. Send request
     final imageName = widget.imageNames[_currentIndex];
     try {
-      HttpServer.postServerAPI("renameImage", {
-        "image": "${widget.folderPath}/$imageName",
+      HttpServer.postServerAPI("renameFile", {
+        "file": "${widget.folderPath}/$imageName",
         "newName": newName,
       });
     } catch (err) {
@@ -119,8 +119,8 @@ class _FullscreenImageState extends State<FullscreenImage> {
     // 2. Send Delete Request
     final imageName = widget.imageNames[_currentIndex];
     try {
-      HttpServer.postServerAPI("deleteImages", {
-        "images": jsonEncode(["${widget.folderPath}/$imageName"]),
+      HttpServer.postServerAPI("deleteFiles", {
+        "files": jsonEncode(["${widget.folderPath}/$imageName"]),
       });
     } catch (err) {
       if (mounted) alert(context, text: "Something went wrong while requesting to delete image! ErrorText: ($err)");

@@ -44,6 +44,9 @@ export abstract class FolderManager {
     static getFolder(folder_path: string): FolderObject | void {
         return this._folder_list.find((folder) => folder.folder_path === folder_path);
     }
+    static getNameFromPath(path: string): string {
+        return path.split("/").at(-1) ?? "";
+    }
 
     static fileExist(file_path: string): boolean {
         const path_length = file_path.length;
@@ -63,8 +66,11 @@ export abstract class FolderManager {
         }
         return true;
     }
+    static folderExist(folder_path: string): boolean {
+        return (this._folder_list.findIndex((folder) => folder.folder_path === folder_path) != -1);
+    }
 
-    static renameFile(file_path: string, new_name: string) {
+    static renameFile(file_path: string, new_name: string): boolean {
         try {
             // 1. Get original file index
             const path_length = file_path.length;
@@ -108,8 +114,39 @@ export abstract class FolderManager {
             fs.rmSync(actual_path);
             folder.files.splice(index, 1);
             return true;
-        } catch (error) {
-            console.log(`An error occured when deleting a file!\n Deleting : ${file_path} | ${actual_path}.\n Error: ${error}`);
+        } catch (err) {
+            console.log(`An error occured when deleting a file!\n Deleting : ${file_path} | ${actual_path}.\n Error: ${err}`);
+            return false;
+        }
+    }
+    static renameFolder(folder_path: string, new_name: string): boolean {
+        const folder = this.getFolder(folder_path);
+        if (!folder) return false;
+        
+        const old_folder_name = this.getNameFromPath(folder_path);
+        const new_folder_path = `${folder_path.substring(0, folder_path.length - old_folder_name.length)}${new_name}`;
+        if (this.getFolder(new_folder_path)) return false;
+
+        const actual_old_path = this.getActualPath(folder_path);
+        const actual_new_path = this.getActualPath(new_folder_path);
+        if (fs.existsSync(actual_new_path) || !fs.existsSync(actual_old_path)) return false;
+        fs.renameSync(actual_old_path, actual_new_path);
+        folder.folder_name = new_name;
+        folder.folder_path = new_folder_path;
+
+        return true;
+    }
+    static deleteFolder(folder_path: string): boolean {
+        const index = this._folder_list.findIndex((folder) => folder.folder_path === folder_path);
+        if (index === -1) return false;
+
+        const actual_path = this.getActualPath(folder_path);
+        try {
+            fs.rmSync(actual_path, {recursive: true});
+            this._folder_list.splice(index, 1);
+            return true;
+        } catch (err) {
+            console.log(`An error occured when deleting a folder!\n Deleting : ${folder_path} | ${actual_path}.\n Error: ${err}`);
             return false;
         }
     }

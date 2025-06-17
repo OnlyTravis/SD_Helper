@@ -1,14 +1,14 @@
 import { Router } from "express";
 import { FolderManager } from "../../code/folders/folder_manager.js";
 
-const renameImage = Router();
+const renameFile = Router();
 
-renameImage.post("/renameImage", async (req, res) => {
+renameFile.post("/renameFile", async (req, res) => {
     try {        
-        const image_path: string = req.body.image
+        const file_path: string = req.body.file
         const new_name: string = req.body.newName;
 
-        if (!FolderManager.renameFile(image_path, new_name)) {
+        if (!FolderManager.renameFile(file_path, new_name)) {
             res.status(400).send({
                 message: "Invalid Request!"
             });
@@ -24,4 +24,4 @@ renameImage.post("/renameImage", async (req, res) => {
     }
 });
 
-export default renameImage;
+export default renameFile;

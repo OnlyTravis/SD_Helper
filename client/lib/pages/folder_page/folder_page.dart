@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'package:http/http.dart' as http;
 
+import 'package:client/code/dialog.dart';
 import 'package:client/code/fetch.dart';
 import 'package:client/pages/folder_page/action_button_group.dart';
 import 'package:client/pages/folder_page/top_bar.dart';
@@ -149,9 +151,144 @@ class _FolderPageState extends State<FolderPage> {
       }
     });
   }
+  void _deselectAll() {
+    setState(() {
+      _isSelected = List.filled(_currentFolder.files.length + _currentFolder.folders.length, false);
+      _selectFileCount = 0;
+      _selectFolderCount = 0;
+    });
+  }
+
+  void _onRenameFile() async {
+    // 1. Input new name
+    final selectedFile = _currentFolder.files[_isSelected.lastIndexOf(true) - _currentFolder.folders.length];
+    final newName = await alertInput<String>(
+      context, 
+      title: "Rename File",
+      text: "Rename file (${selectedFile.fileName}) \nto : (file extensions not needed) ",
+    );
+    if (newName == null || newName.isEmpty) {
+      if (mounted) alert(context, text: "Invalid name.");
+      return;
+    }
+
+    // 2. Check if image with new name already exist
+    final fileExtension = selectedFile.fileName.split(".").last;
+    final newFileName = "$newName.$fileExtension";
+    if (_currentFolder.files.indexWhere((file) => file.fileName == newFileName) != -1) {
+      if (mounted) alert(context, text: "A file with that name already exist!");
+      return;
+    }
+
+    // 3. Send request
+    try {
+      final res = await HttpServer.postServerAPI("renameFile", {
+        "file": "${_currentFolder.folderPath}/${selectedFile.fileName}",
+        "newName": newName,
+      });
+      if (res.statusCode != 200) {
+        if (mounted) alert(context, text: "Something went wrong while renaming the file! Responce: '${res.body}'");
+        return;
+      }
+    } catch (err) {
+      if (mounted) alert(context, text: "Something went wrong while renaming the file! ErrorText: ($err)");
+      return;
+    }
+
+    // 4. Call update on parent
+    updateFolder();
+    _deselectAll();
+    if (mounted) alertSnackbar(context, text: "File '${selectedFile.fileName}' Renamed to $newFileName!");
+  }
+  void _onRenameFolder() async {
+    // 1. Input new name
+    final selectedFolder = _currentFolder.folders[_isSelected.indexOf(true)];
+    final newName = await alertInput<String>(
+      context, 
+      title: "Rename Folder",
+      text: "Rename folder (${selectedFolder.folderName}) \nto : ",
+    );
+    if (newName == null || newName.isEmpty) {
+      if (mounted) alert(context, text: "Invalid name.");
+      return;
+    }
+
+    // 2. Check if folder with new name already exist
+    if (_currentFolder.folders.indexWhere((folder) => folder.folderName == newName) != -1) {
+      if (mounted) alert(context, text: "A folder with that name already exist!");
+      return;
+    }
+
+    // 3. Send request
+    try {
+      final res = await HttpServer.postServerAPI("renameFolder", {
+        "folder": selectedFolder.folderPath,
+        "newName": newName,
+      });
+      if (res.statusCode != 200) {
+        if (mounted) alert(context, text: "Something went wrong while renaming the folder! Responce: '${res.body}'");
+        return;
+      }
+    } catch (err) {
+      if (mounted) alert(context, text: "Something went wrong while renaming the folder! ErrorText: ($err)");
+      return;
+    }
+
+    // 4. Call update on parent
+    updateFolder();
+    _deselectAll();
+    if (mounted) alertSnackbar(context, text: "Folder '${selectedFolder.folderName}' Renamed to $newName!");
+  }
+  void _onDelete() async {
+    // 1. Get selected files / folders;
+    final folderCount = _currentFolder.folders.length;
+    final files = _currentFolder.files.asMap().entries.where((entry) => _isSelected[entry.key + folderCount]).map((entry) => entry.value).toList();
+    final folders = _currentFolder.folders.asMap().entries.where((entry) => _isSelected[entry.key]).map((entry) => entry.value).toList();
+
+    // 2. Confirm delete
+    late String titleText;
+    if (_selectFileCount == 1 && _selectFolderCount == 0) {
+      titleText = "Are you sure you want to delete this file?";
+    } else if (_selectFolderCount == 1 && _selectFileCount == 0) {
+      titleText = "Are you sure you want to delete this folder?";
+    } else if (_selectFolderCount == 0) {
+      titleText = "Are you sure you want to delete these files?";
+    } else if (_selectFileCount == 0) {
+      titleText = "Are you sure you want to delete these folders?";
+    } else {
+      titleText = "Are you sure you want to delete these files & folders?";
+    }
+    final confirmDelete = await confirm(
+      context, 
+      title: titleText, 
+      text: "${folders.map((folder) => "${folder.folderName}/").join("\n")}${files.map((file) => file.fileName).join("\n")}",
+    );
+    if (!confirmDelete) return;
+    
+    // 3. Send delete request to server
+    try {
+      final folderPath = _currentFolder.folderPath;
+      final res = await HttpServer.postServerAPI("deleteFiles", {
+        "files": jsonEncode(files.map((file) => "$folderPath/${file.fileName}").toList()),
+        "folders": jsonEncode(folders.map((folder) => folder.folderPath).toList()),
+      });
+      if (res.statusCode != 200) {
+        if (mounted) alert(context, text: "Something went wrong while deleting objects! Responce: '${res.body}'");
+        return;
+      }
+    } catch (err) {
+      if (mounted) alert(context, text: "Something went wrong while deleting objects! ErrorText: ($err)");
+      return;
+    }
+
+    // 4. Call update on parent
+    updateFolder();
+    _deselectAll();
+    if (mounted) alertSnackbar(context, text: "Files Deleted!");
+  }
 
   // Get itemPerPage based on display style & (Desktop or Mobile)
-  int getPerPage(DisplayStyle style) {
+  int _getPerPage(DisplayStyle style) {
     final bool isDesktop = isWideScreen(context);
     int perPage = 5;
     switch (style) {
@@ -178,7 +315,7 @@ class _FolderPageState extends State<FolderPage> {
   }
   Widget _pageBody() {
     // 1. Files / Folders display
-    final perPage = getPerPage(_displayStyle);
+    final perPage = _getPerPage(_displayStyle);
     final showBackFolder = (_currentFolder.folderPath != "/");
     final folderCount = _currentFolder.folders.length;
     final fileCount = _currentFolder.files.length;
@@ -249,11 +386,11 @@ class _FolderPageState extends State<FolderPage> {
           folderOnly: (_selectFileCount == 0),
           singleFile: (_selectFileCount == 1),
           singleFolder: (_selectFolderCount == 1),
-          onRenameFile: () {},
+          onRenameFile: _onRenameFile,
           onMassRenameFiles: () {},
-          onRenameFolder: () {},
+          onRenameFolder: _onRenameFolder,
           onMove: () {},
-          onDelete: () {},
+          onDelete: _onDelete,
         ),
       ],
     );
