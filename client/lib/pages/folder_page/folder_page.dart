@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 
 import 'package:client/code/dialog.dart';
 import 'package:client/code/fetch.dart';
@@ -168,7 +167,7 @@ class _FolderPageState extends State<FolderPage> {
       text: "Rename file (${selectedFile.fileName}) \nto : (file extensions not needed) ",
     );
     if (newName == null || newName.isEmpty) {
-      if (mounted) alert(context, text: "Invalid name.");
+      if (mounted) alert(context, title: "Error", text: "Invalid name.");
       return;
     }
 
@@ -176,7 +175,7 @@ class _FolderPageState extends State<FolderPage> {
     final fileExtension = selectedFile.fileName.split(".").last;
     final newFileName = "$newName.$fileExtension";
     if (_currentFolder.files.indexWhere((file) => file.fileName == newFileName) != -1) {
-      if (mounted) alert(context, text: "A file with that name already exist!");
+      if (mounted) alert(context, title: "Error", text: "A file with that name already exist!");
       return;
     }
 
@@ -187,11 +186,11 @@ class _FolderPageState extends State<FolderPage> {
         "newName": newName,
       });
       if (res.statusCode != 200) {
-        if (mounted) alert(context, text: "Something went wrong while renaming the file! Responce: '${res.body}'");
+        if (mounted) alert(context, title: "Error", text: "Something went wrong while renaming the file! Responce: '${res.body}'");
         return;
       }
     } catch (err) {
-      if (mounted) alert(context, text: "Something went wrong while renaming the file! ErrorText: ($err)");
+      if (mounted) alert(context, title: "Error", text: "Something went wrong while renaming the file! ErrorText: ($err)");
       return;
     }
 
@@ -199,6 +198,19 @@ class _FolderPageState extends State<FolderPage> {
     updateFolder();
     _deselectAll();
     if (mounted) alertSnackbar(context, text: "File '${selectedFile.fileName}' Renamed to $newFileName!");
+  }
+  void _onMassRenameFile() async {
+    // 1. Input new name
+    final selectedFile = _currentFolder.files[_isSelected.lastIndexOf(true) - _currentFolder.folders.length];
+    final newName = await alertInput<String>(
+      context, 
+      title: "Mass Rename File",
+      text: "Mass Rename files to : (file extensions not needed) ",
+    );
+    if (newName == null || newName.isEmpty) {
+      if (mounted) alert(context, title: "Error", text: "Invalid name.");
+      return;
+    }
   }
   void _onRenameFolder() async {
     // 1. Input new name
@@ -209,13 +221,13 @@ class _FolderPageState extends State<FolderPage> {
       text: "Rename folder (${selectedFolder.folderName}) \nto : ",
     );
     if (newName == null || newName.isEmpty) {
-      if (mounted) alert(context, text: "Invalid name.");
+      if (mounted) alert(context, title: "Error", text: "Invalid name.");
       return;
     }
 
     // 2. Check if folder with new name already exist
     if (_currentFolder.folders.indexWhere((folder) => folder.folderName == newName) != -1) {
-      if (mounted) alert(context, text: "A folder with that name already exist!");
+      if (mounted) alert(context, title: "Error", text: "A folder with that name already exist!");
       return;
     }
 
@@ -226,11 +238,11 @@ class _FolderPageState extends State<FolderPage> {
         "newName": newName,
       });
       if (res.statusCode != 200) {
-        if (mounted) alert(context, text: "Something went wrong while renaming the folder! Responce: '${res.body}'");
+        if (mounted) alert(context, title: "Error", text: "Something went wrong while renaming the folder! Responce: '${res.body}'");
         return;
       }
     } catch (err) {
-      if (mounted) alert(context, text: "Something went wrong while renaming the folder! ErrorText: ($err)");
+      if (mounted) alert(context, title: "Error", text: "Something went wrong while renaming the folder! ErrorText: ($err)");
       return;
     }
 

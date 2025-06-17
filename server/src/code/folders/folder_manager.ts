@@ -47,6 +47,10 @@ export abstract class FolderManager {
     static getNameFromPath(path: string): string {
         return path.split("/").at(-1) ?? "";
     }
+    static getParentFromPath(path: string): string {
+        const splitted = path.split("/");
+        return splitted.slice(0, splitted.length-1).join("/");
+    }
 
     static fileExist(file_path: string): boolean {
         const path_length = file_path.length;
@@ -70,6 +74,9 @@ export abstract class FolderManager {
         return (this._folder_list.findIndex((folder) => folder.folder_path === folder_path) != -1);
     }
 
+    static moveFile(file_path: string, to_folder_path: string): boolean {
+        return false;
+    }
     static renameFile(file_path: string, new_name: string): boolean {
         try {
             // 1. Get original file index
@@ -98,6 +105,26 @@ export abstract class FolderManager {
             return false;
         }
     }
+    static renameFolder(folder_path: string, new_name: string): boolean {
+        const folder = this.getFolder(folder_path);
+        if (!folder) return false;
+        
+        const old_folder_name = this.getNameFromPath(folder_path);
+        const new_folder_path = `${folder_path.substring(0, folder_path.length - old_folder_name.length)}${new_name}`;
+        if (this.getFolder(new_folder_path)) return false;
+
+        const actual_old_path = this.getActualPath(folder_path);
+        const actual_new_path = this.getActualPath(new_folder_path);
+        if (fs.existsSync(actual_new_path) || !fs.existsSync(actual_old_path)) return false;
+        fs.renameSync(actual_old_path, actual_new_path);
+        folder.folder_name = new_name;
+        folder.folder_path = new_folder_path;
+        for (const inner_folder of folder.folders) {
+            inner_folder.parent = new_folder_path;
+        }
+
+        return true;
+    }
     static deleteFile(file_path: string): boolean {
         const path_length = file_path.length;
         const file_name = file_path.split("/").at(-1) ?? "";
@@ -119,31 +146,28 @@ export abstract class FolderManager {
             return false;
         }
     }
-    static renameFolder(folder_path: string, new_name: string): boolean {
-        const folder = this.getFolder(folder_path);
-        if (!folder) return false;
-        
-        const old_folder_name = this.getNameFromPath(folder_path);
-        const new_folder_path = `${folder_path.substring(0, folder_path.length - old_folder_name.length)}${new_name}`;
-        if (this.getFolder(new_folder_path)) return false;
-
-        const actual_old_path = this.getActualPath(folder_path);
-        const actual_new_path = this.getActualPath(new_folder_path);
-        if (fs.existsSync(actual_new_path) || !fs.existsSync(actual_old_path)) return false;
-        fs.renameSync(actual_old_path, actual_new_path);
-        folder.folder_name = new_name;
-        folder.folder_path = new_folder_path;
-
-        return true;
-    }
     static deleteFolder(folder_path: string): boolean {
         const index = this._folder_list.findIndex((folder) => folder.folder_path === folder_path);
         if (index === -1) return false;
 
         const actual_path = this.getActualPath(folder_path);
+        const parent_path = this.getParentFromPath(folder_path);
         try {
             fs.rmSync(actual_path, {recursive: true});
-            this._folder_list.splice(index, 1);
+            
+            // Removing from parent
+            const parent = this.getFolder(parent_path)
+            if (parent) {
+                const index = parent.folders.findIndex((folder) => folder.folder_path === folder_path);
+                if (index !== -1) parent.folders.splice(index, 1);
+            }
+            // Removing self
+            this._folder_list.splice(index, 1); 
+            // Removing childs
+            for (let i = this._folder_list.length-1; i >= 0; i--) { 
+                if (!this._folder_list[i].parent.startsWith(folder_path)) continue;
+                this._folder_list.splice(i, 1);
+            }
             return true;
         } catch (err) {
             console.log(`An error occured when deleting a folder!\n Deleting : ${folder_path} | ${actual_path}.\n Error: ${err}`);
@@ -210,18 +234,20 @@ export abstract class FolderManager {
 
             const is_dir = fs.lstatSync(actual_obj_path).isDirectory();
             if (is_dir) {
-                const folder_obj: FolderObject = {
-                    parent: folder_path,
-                    folder_name: obj,
-                    folder_path: obj_path,
-                    folders: [],
-                    files: []
-                }
-                folder.folders.push(folder_obj);
                 if (recursive) {
-                    folders.push(...this._traverseFolder(folder_path, obj_path, true));
+                    const inner_folders = this._traverseFolder(folder_path, obj_path, true);
+                    folders.push(...inner_folders);
+                    folder.folders.push(inner_folders[0]);
                 } else {
-                    folders.push(folder_obj)
+                    const folder_obj: FolderObject = {
+                        parent: folder_path,
+                        folder_name: obj,
+                        folder_path: obj_path,
+                        folders: [],
+                        files: []
+                    }
+                    folders.push(folder_obj);
+                    folder.folders.push(folder_obj);
                 }
             } else {
                 const file_type = this.
