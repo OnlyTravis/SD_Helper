@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:client/code/dialog.dart';
 import 'package:client/code/fetch.dart';
 import 'package:client/pages/folder_page/action_button_group.dart';
+import 'package:client/pages/folder_page/mass_rename_dialog.dart';
 import 'package:client/pages/folder_page/top_bar.dart';
 import 'package:client/pages/fullscreen_image/fullscreen_image.dart';
 import 'package:client/pages/folder_page/page_navigation_buttons.dart';
@@ -200,17 +201,20 @@ class _FolderPageState extends State<FolderPage> {
     if (mounted) alertSnackbar(context, text: "File '${selectedFile.fileName}' Renamed to $newFileName!");
   }
   void _onMassRenameFile() async {
-    // 1. Input new name
-    final selectedFile = _currentFolder.files[_isSelected.lastIndexOf(true) - _currentFolder.folders.length];
-    final newName = await alertInput<String>(
-      context, 
-      title: "Mass Rename File",
-      text: "Mass Rename files to : (file extensions not needed) ",
-    );
-    if (newName == null || newName.isEmpty) {
-      if (mounted) alert(context, title: "Error", text: "Invalid name.");
-      return;
-    }
+    // 1. Show mass rename dialog
+		final folderCount = _currentFolder.folders.length;
+    final files = _currentFolder.files.asMap().entries.where((entry) => _isSelected[entry.key + folderCount]).map((entry) => entry.value.fileName).toList();
+
+		void onConfirm(name) {
+			print(name);	
+		}
+		await showDialog(
+			context: context, 
+			builder: (_) => FolderPageMassRenameDialog(
+				fileList: files,
+				onConfirm: onConfirm,
+			),
+		);
   }
   void _onRenameFolder() async {
     // 1. Input new name
@@ -399,7 +403,7 @@ class _FolderPageState extends State<FolderPage> {
           singleFile: (_selectFileCount == 1),
           singleFolder: (_selectFolderCount == 1),
           onRenameFile: _onRenameFile,
-          onMassRenameFiles: () {},
+          onMassRenameFiles: _onMassRenameFile,
           onRenameFolder: _onRenameFolder,
           onMove: () {},
           onDelete: _onDelete,
