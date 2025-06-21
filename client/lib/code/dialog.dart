@@ -123,6 +123,7 @@ Future<T?> alertInput<T>(BuildContext context, {
         ),
         TextButton(
           onPressed: () {
+						responceText = null;
             Navigator.pop(context);
           },
           child: const Text('Cancel'),

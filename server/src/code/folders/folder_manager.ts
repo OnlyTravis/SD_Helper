@@ -1,12 +1,18 @@
 import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { SettingsManager } from "../settings/settings_manager.js"
-import { ALLOWED_FILE_TYPES, IMAGE_FILE_EXTENSIONS } from '../constants/constants.js';
+import { ALLOWED_FILE_TYPES, IMAGE_FILE_EXTENSIONS, TEMP_FOLDER_PATH } from '../constants/constants.js';
 import { FileTypes, FileObject, FolderObject } from './folder_enums.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export abstract class FolderManager {
     static _root_folder_paths: Array<string> = [];
     static _root_folder_map: Map<string, string> = new Map();
     static _folder_list: Array<FolderObject> = [];
+    static _tmp_folder_path: String = "";
 
     static init() {
         if (!SettingsManager.inited) throw new Error("FolderManager.init() is called before SettingsManager is initialized!");
@@ -39,6 +45,9 @@ export abstract class FolderManager {
             const folders = this._traverseFolder("/", `$${folder_name}$`, true);
             this._folder_list = this._folder_list.concat(folders);
         }
+
+        // 3. Get tmp folder path
+        this._tmp_folder_path = TEMP_FOLDER_PATH;
     }
 
     static getFolder(folder_path: string): FolderObject | void {
@@ -83,7 +92,7 @@ export abstract class FolderManager {
             const path_length = file_path.length;
             const file_name = file_path.split("/").at(-1)!;
             const folder_path = file_path.substring(0, path_length-file_name.length-1);
-            const file_extension = file_name.split(".").at(-1)!
+            const file_extension = file_name.split(".").at(-1)!;
 
             const folder = this.getFolder(folder_path);
             if (!folder) return false;
@@ -104,6 +113,57 @@ export abstract class FolderManager {
             console.log(`An error occured when renaming a file! Error: ${error}`);
             return false;
         }
+    }
+    static renameFiles(file_paths: Array<string>, new_names: Array<string>): boolean {
+        // 1. Check if files are from same folder
+        const file_names = file_paths.map((file_path) => file_path.split("/").at(-1) ?? "");
+        new_names = new_names.map((new_name, i) => `${new_name}.${file_paths[i].split(".").at(-1) ?? ""}`);
+        const folder_path = file_paths[0].substring(0, file_paths[0].length - file_names[0].length - 1);
+
+        for (let i = 0; i < file_paths.length; i++) {
+            if (file_paths[i].startsWith(folder_path) && file_paths[i].length === folder_path.length + file_names[i].length + 1) continue;
+            return false;
+        }
+        
+        // 2. Check new file names conflicts with other files in folder
+        const folder = this.getFolder(folder_path);
+        if (!folder) return false;
+
+        const file_indices = [];
+        for (const file_name of file_names) {
+            const index = folder.files.findIndex((f) => f.file_name === file_name);
+            if (index === -1) return false;
+            file_indices.push(index);
+        }
+
+        for (let i = 0; i < folder.files.length; i++) {
+            if (file_indices.includes(i)) continue;
+            if (new_names.includes(folder.files[i].file_name)) return false;
+        }
+        
+        // 3. Check if all files exists in file system
+        const actual_file_paths = file_paths.map((file_path) => this.getActualPath(file_path));
+        for (const actual_file_path of actual_file_paths) {
+            if (!fs.existsSync(actual_file_path)) return false;
+        }
+        
+        // 4. Move files to temp folder
+        const actual_folder_path = this.getActualPath(folder_path);
+        for (let i = 0; i < file_paths.length; i++) {
+            fs.renameSync(actual_file_paths[i], `${this._tmp_folder_path}/${file_names[i]}`);
+        }
+        
+        // 5. Rename & Move files back 
+        for (let i = 0; i < file_paths.length; i++) {
+            fs.renameSync(`${this._tmp_folder_path}/${file_names[i]}`, `${actual_folder_path}/${new_names[i]}`);
+        }
+        
+        // 6. Rename files in folder object
+        for (let i = 0; i < file_paths.length; i++) {
+            const index = file_indices[i];
+            folder.files[index].file_name = new_names[i];
+        }
+        return true;
     }
     static renameFolder(folder_path: string, new_name: string): boolean {
         const folder = this.getFolder(folder_path);

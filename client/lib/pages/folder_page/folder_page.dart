@@ -167,7 +167,8 @@ class _FolderPageState extends State<FolderPage> {
       title: "Rename File",
       text: "Rename file (${selectedFile.fileName}) \nto : (file extensions not needed) ",
     );
-    if (newName == null || newName.isEmpty) {
+    if (newName == null) return; // Cancel button pressed
+    if (newName.isEmpty) {
       if (mounted) alert(context, title: "Error", text: "Invalid name.");
       return;
     }
@@ -202,19 +203,39 @@ class _FolderPageState extends State<FolderPage> {
   }
   void _onMassRenameFile() async {
     // 1. Show mass rename dialog
-		final folderCount = _currentFolder.folders.length;
+    final folderCount = _currentFolder.folders.length;
     final files = _currentFolder.files.asMap().entries.where((entry) => _isSelected[entry.key + folderCount]).map((entry) => entry.value.fileName).toList();
 
-		void onConfirm(name) {
-			print(name);	
-		}
-		await showDialog(
-			context: context, 
-			builder: (_) => FolderPageMassRenameDialog(
-				fileList: files,
-				onConfirm: onConfirm,
-			),
-		);
+    void onConfirm(List<String> newNames) async {
+      // #1. Send request
+      newNames = newNames.map((newName) => newName.substring(0, newName.length - newName.split(".").last.length - 1)).toList();
+      try {
+        final res = await HttpServer.postServerAPI("renameFiles", {
+          "files": jsonEncode(files.map((fileName) => "${_currentFolder.folderPath}/$fileName").toList()),
+          "newNames": jsonEncode(newNames),
+        });
+        if (res.statusCode != 200) {
+          if (mounted) alert(context, title: "Error", text: "Something went wrong while renaming files! Responce: '${res.body}'");
+          return;
+        }
+      } catch (err) {
+        if (mounted) alert(context, title: "Error", text: "Something went wrong while renaming files! ErrorText: ($err)");
+        return;
+      }
+
+      // #2. Call update on parent
+      updateFolder();
+      _deselectAll();
+      if (mounted) alertSnackbar(context, text: "Files Renamed!");
+    }
+    await showDialog(
+      context: context, 
+      builder: (_) => FolderPageMassRenameDialog(
+        fileList: files,
+        allFiles: _currentFolder.files.map((file) => file.fileName).toList(),
+        onConfirm: onConfirm,
+      ),
+    );
   }
   void _onRenameFolder() async {
     // 1. Input new name
@@ -224,7 +245,8 @@ class _FolderPageState extends State<FolderPage> {
       title: "Rename Folder",
       text: "Rename folder (${selectedFolder.folderName}) \nto : ",
     );
-    if (newName == null || newName.isEmpty) {
+    if (newName == null) return; // Cancel pressed
+    if (newName.isEmpty) {
       if (mounted) alert(context, title: "Error", text: "Invalid name.");
       return;
     }
