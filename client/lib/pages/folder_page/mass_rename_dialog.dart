@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 
 class FolderPageMassRenameDialog extends StatefulWidget {
   final List<String> fileList;
+  final List<String> otherFiles;
   final Function(String) onConfirm;
 
   const FolderPageMassRenameDialog({
     super.key,
     required this.fileList,
+    required this.otherFiles,
     required this.onConfirm,
   });
 
@@ -21,6 +23,8 @@ class _FolderPageMassRenameDialogState extends State<FolderPageMassRenameDialog>
 	String errorText = "";
 
   bool isValid() {
+    bool valid = true;
+
     // Check for Counter
     final counterRegExp = RegExp(r"%c\((?<params>[\s\d,]*)\)");
     final matches = counterRegExp.allMatches(input);
@@ -29,27 +33,54 @@ class _FolderPageMassRenameDialogState extends State<FolderPageMassRenameDialog>
 			setState(() {
 				errorText = "Atleast 1 counter must present when mass renaming files to avoid same file names!";
 			});
-			return false;
+			valid = false;
 		}
 		for (final match in matches) {
 			final params = match.namedGroup("params")!.split(",").map((param) => int.tryParse(param));
-			if (params.contains(null) || params.length > 3) {
+			if (params.isEmpty || params.contains(null) || params.length > 3) {
 				setState(() {
 				  errorText = "Invalid Counter at position ${match.start} : '${match.group(0)}'. ";
 				});
-				return false;
+				valid = false;
 			}
 		}
 
 		setState(() {
 		  errorText = "";
 		});
-		return true;
+		return valid;
   } 
 
   List<String> getNewNames() {
-		
-    return ["wip"];
+    final newNames = List.filled(widget.fileList.length, input); 
+
+    // handle counters
+    final counterRegExp = RegExp(r"%c\((?<params>[\s\d,]*)\)");
+    for (final match in counterRegExp.allMatches(input)) {
+      final params = match.namedGroup("params")!.split(",").map((param) => int.tryParse(param)).toList();
+			if (params.isEmpty || params.contains(null) || params.length > 3) continue;
+      final int start = params[0] ?? 0;
+      final int length = params.elementAtOrNull(1) ?? -1;
+      final int step = params.elementAtOrNull(2) ?? 1;
+
+      if (length == -1) {
+        for (int i = 0; i < newNames.length; i++) {
+          final replaceString = (start+step*i).toString();
+          newNames[i] = newNames[i].replaceAll(match.group(0) ?? "", replaceString);
+        }
+      } else {
+        for (int i = 0; i < newNames.length; i++) {
+          final replaceString = (start+step*i).toString().padLeft(length, "0");
+          newNames[i] = newNames[i].replaceAll(match.group(0) ?? "", replaceString);
+        }
+      }
+    }
+
+    // Add file extensions
+    for (int i = 0; i < newNames.length; i++) {
+      newNames[i] += ".${widget.fileList[i].split(".").last}";
+    }
+    return newNames;
   }
 
   @override
